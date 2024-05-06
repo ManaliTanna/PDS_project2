@@ -1,12 +1,15 @@
 from django.shortcuts import render, redirect
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.contrib.auth.hashers import check_password
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_exempt
 
 from .models import Users, Blocks, Address
 
 from .forms.signup import UserSignupForm
 from .forms.address import AddressForm
+
+from django.db import connection
     
 def home(request):
     if request.session.get('is_logged_in', False):
@@ -16,10 +19,6 @@ def home(request):
         return render(request, 'home.html', {'user': user_details})
     else:
         return redirect('login') 
-
-def blocks(request):
-    blocks = Blocks.objects.all()
-    return render(request, 'blocks.html', {'blocks': blocks})
 
 @require_http_methods(["GET", "POST"])
 def user_login(request):
@@ -104,5 +103,31 @@ def profile(request):
             return HttpResponse('User does not exist.', status=404)
     else:
         return redirect('login')
+    
+def blocks(request):
+    blocks = Blocks.objects.all()
+    return render(request, 'blocks.html', {'blocks': blocks})
+
+def find_block(block_name):
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT * FROM blocks WHERE block_name = %s", [block_name])
+        result = cursor.fetchall()
+        return result
+    
+def search_blocks(request):
+    blocks = []  # This will hold the search results
+    if 'search_term' in request.GET:
+        search_term = request.GET['search_term']
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM blocks WHERE block_name ILIKE %s", [f"%{search_term}%"])
+            rows = cursor.fetchall()
+            columns = [col[0] for col in cursor.description]
+            blocks = [
+                dict(zip(columns, row))
+                for row in rows
+            ]
+
+    # Render the same template whether or not there was a search
+    return render(request, 'blocks.html', {'blocks': blocks})
 
 

@@ -7,7 +7,7 @@ class UserSignupForm(forms.ModelForm):
     
     class Meta:
         model = Users
-        fields = ['user_name', 'password', 'first_name', 'last_name', 'email', 'phone_number', 'number_of_family_members', 'intro', 'user_photo']
+        fields = ['user_name', 'password', 'first_name', 'last_name', 'email', 'phone_number', 'number_of_family_members', 'intro']
         widgets = {
             'user_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Username'}),
             'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'First Name'}),
