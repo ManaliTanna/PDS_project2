@@ -1,0 +1,54 @@
+<!-- blocks.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Available Blocks</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <style>
+        /* Add custom CSS styles here */
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1>Available Blocks</h1>
+        <!-- Search bar -->
+        <div class="input-group mb-3">
+            <input type="text" class="form-control" placeholder="Search for blocks..." aria-label="Search for blocks" aria-describedby="search-button">
+            <div class="input-group-append">
+                <button class="btn btn-primary" type="button" id="search-button">Search</button>
+            </div>
+        </div>
+        <!-- Blocks list -->
+        <ul class="list-group">
+            <!-- Example block item -->
+            {% for block in blocks %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                {{ block.block_name }}
+                <span>
+                    <button class="btn btn-success btn-sm mr-2">Follow</button>
+                    <button class="btn btn-primary btn-sm">Join</button>
+                </span>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    <!-- Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <!-- Custom JavaScript -->
+    <script>
+        // Search button click event listener
+        $('#search-button').click(function() {
+            const searchTerm = $('.form-control').val();
+            // Handle search functionality (not implemented in this example)
+            console.log("Searching for:", searchTerm);
+        });
+    </script>
+</body>
+</html>

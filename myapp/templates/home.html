@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Main Feed - Your App Name</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <style>
+        /* Add custom CSS styles here */
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row bg-light py-2">
+            <div class="col-4">
+                <!-- Logo -->
+                <img src="logo.png" alt="Logo" class="img-fluid ml-3" style="max-height: 50px;">
+            </div>
+            <div class="col-4">
+                <!-- Search Bar -->
+                <form class="form-inline d-flex justify-content-center">
+                    <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search">
+                    <button class="btn btn-outline-primary my-2 my-sm-0" type="submit">Search</button>
+                </form>
+            </div>
+            <div class="col-4 text-right">
+                <!-- Profile -->
+                <div class="col-4 text-right">
+                    <!-- Profile button with direct link -->
+                    <a href="{% url 'profile' %}" class="btn btn-secondary">Profile</a>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-4">
+            <div class="col-md-8">
+                <!-- Thread list -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        All Recent Threads
+                    </div>
+                    <ul class="list-group list-group-flush" id="thread-list">
+                        <!-- Threads will be dynamically added here -->
+                    </ul>
+                </div>
+                <!-- Post message form -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        Start a New Topic
+                    </div>
+                    <div class="card-body">
+                        <form id="post-form">
+                            <div class="form-group">
+                                <label for="message-subject">Subject</label>
+                                <input type="text" class="form-control" id="message-subject" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="message-recipients">Recipients</label>
+                                <select class="form-control" id="message-recipients" multiple required>
+                                    <!-- Options for selecting recipients -->
+                                    <option value="friend">All Friends</option>
+                                    <option value="neighbor">All Neighbors</option>
+                                    <option value="block">Entire Block</option>
+                                    <option value="hood">Entire Hood</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="message-visibility">Visibility</label>
+                                <select class="form-control" id="message-visibility" required>
+                                    <!-- Options for selecting visibility -->
+                                    <option value="public">Public</option>
+                                    <option value="private">Private</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="message-content">Message Content</label>
+                                <textarea class="form-control" id="message-content" rows="3" required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Post</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <!-- Sidebar with filters -->
+                <div class="card">
+                    <div class="card-header">
+                        Filters
+                    </div>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">Neighbor Feeds</li>
+                        <li class="list-group-item">Friend Feeds</li>
+                        <li class="list-group-item">Block Feeds</li>
+                        <li class="list-group-item">Hood Feeds</li>
+                    </ul>
+                </div>
+                <!-- Options -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        Options
+                    </div>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item"><a href="#">Threads with New Messages</a></li>
+                        <li class="list-group-item"><a href="#">Newly Joined Members</a></li>
+                        <li class="list-group-item"><a href="#">Apply to Join a Block</a></li>
+                    </ul>
+                </div>
+                <!-- Newly joined members -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        Newly Joined Members
+                    </div>
+                    <ul class="list-group list-group-flush">
+                        <!-- Example member item -->
+                        <li class="list-group-item">
+                            <div class="media">
+                                <img src="profile-image.jpg" class="mr-3 rounded-circle" alt="Profile Picture" style="width: 50px; height: 50px;">
+                                <div class="media-body">
+                                    <h5 class="mt-0">New Member Name</h5>
+                                    <p class="text-muted">Joined 1 day ago</p>
+                                    <p>Additional information about the member...</p>
+                                </div>
+                            </div>
+                        </li>
+                        <!-- Repeat for more members -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <!-- Custom JavaScript -->
+    <script>
+        // Sample data for threads and messages
+        const threadsData = [
+            { 
+                title: "Thread Title 1",
+                username: "User1",
+                time: "2 hours",
+                content: "This is the content of the thread...",
+                messages: [
+                    { content: "Message 1", author: "User1", timestamp: "1 hour ago" },
+                    { content: "Message 2", author: "User2", timestamp: "30 minutes ago" }
+                ]
+            },
+            // Add more threads here
+        ];
+
+        // Function to render messages for a thread
+        function renderMessages(messages) {
+            let messagesHTML = "";
+            messages.forEach(message => {
+                messagesHTML += `
+                    <div class="message">
+                        <p>${message.content}</p>
+                        <p class="text-muted">Posted by <a href="#">${message.author}</a> ${message.timestamp}</p>
+                        <button class="btn btn-sm btn-secondary reply-btn">Reply</button>
+                    </div>
+                `;
+            });
+            return messagesHTML;
+        }
+
+        // Function to render a thread
+        function renderThread(thread) {
+            const threadHTML = `
+                <li class="list-group-item">
+                    <h5><a href="#">${thread.title}</a></h5>
+                    <p class="text-muted">Posted by <a href="#">${thread.username}</a> ${thread.time} ago</p>
+                    <p>${thread.content}</p>
+                    <!-- Messages -->
+                    <div class="messages">
+                        ${renderMessages(thread.messages)}
+                    </div>
+                    <!-- End Messages -->
+                </li>
+            `;
+            return threadHTML;
+        }
+
+        // Function to add threads to the DOM
+        function addThreadsToDOM(threads) {
+            threads.forEach(thread => {
+                const threadHTML = renderThread(thread);
+                $('#thread-list').append(threadHTML);
+            });
+        }
+
+        // Add sample threads to the DOM
+        $(document).ready(function() {
+            addThreadsToDOM(threadsData);
+        });
+
+        // Event listener for post form submission
+        $('#post-form').submit(function(event) {
+            event.preventDefault();
+            const subject = $('#message-subject').val();
+            const recipients = $('#message-recipients').val();
+            const visibility = $('#message-visibility').val();
+            const content = $('#message-content').val();
+            // Handle posting message to backend (not implemented in this example)
+            console.log("Subject:", subject);
+            console.log("Recipients:", recipients);
+            console.log("Visibility:", visibility);
+            console.log("Message Content:", content);
+            // Clear the form inputs
+            $('#message-subject').val('');
+            $('#message-recipients').val([]);
+            $('#message-visibility').val('public');
+            $('#message-content').val('');
+        });
+    </script>
+</body>
+</html>

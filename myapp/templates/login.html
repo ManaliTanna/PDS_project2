@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Login</title>
+<style>
+body {
+    text-align: center;
+}
+form {
+    display: inline-block;
+    text-align: left;
+}
+input[type="text"],
+input[type="password"],
+button[type="submit"] {
+    display: block;
+    margin: 10px auto;
+}
+</style>
+</head>
+<body>
+<h2>Login</h2>
+<form method="post">
+{% csrf_token %}
+{% if error %}
+<p>{{ error }}</p>
+{% endif %}
+<input type="text" name="username" placeholder="Username"><br>
+<input type="password" name="password" placeholder="Password"><br>
+<button type="submit">Login</button>
+</form>
+</body>
+</html>
