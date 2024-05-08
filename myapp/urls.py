@@ -10,6 +10,13 @@ urlpatterns = [
     path('profile/', views.profile, name='profile'),
     path('blocks/', views.blocks, name='blocks'),
     path('search_blocks/', views.search_blocks, name='search_blocks'),
+    path('search/', views.search_messages, name='search'),
+    path('post_message/', views.send_message, name='send_message'),
+    path('membership_requests/', views.membership_requests, name='membership_requests'),
+    path('approve_membership/<int:application_id>/', views.approve_membership, name='approve_membership'),
+    path('reject_membership/<int:application_id>/', views.reject_membership, name='reject_membership'),
+    
+
 ]
 
 

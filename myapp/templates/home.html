@@ -4,12 +4,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your Name</title>
+    <title>BlockTalks</title>
     <!-- Bootstrap CSS -->
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <!-- Custom CSS -->
     <style>
-        /* Add custom CSS styles here */
+        /* Custom CSS for the "Start a New Topic" form */
+
+        .card {
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            background-color: #007bff;
+            color: #fff;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            font-weight: bold;
+        }
+
+        textarea.form-control {
+            resize: vertical;
+        }
+
+        .recipient-options {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .recipient-options li {
+            margin-bottom: 5px;
+        }
+
+        .recipient-options li label {
+            cursor: pointer;
+            padding: 5px 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            display: inline-block;
+            transition: background-color 0.3s;
+        }
+
+        .recipient-options li label:hover {
+            background-color: #f0f0f0;
+        }
+
+        .recipient-options li input[type="checkbox"] {
+            display: none;
+        }
+
+        .recipient-options li input[type="checkbox"]:checked + label {
+            background-color: #007bff;
+            color: #fff;
+            border-color: #007bff;
+        }
     </style>
 </head>
 <body>
@@ -18,7 +76,7 @@
             <div class="col-4">
                 <!-- Logo -->
                 <img src="{% static 'logo.png' %}" alt="Logo" style="height: 50px;">
-                <span class="site-name">Your Name</span>
+                <span class="site-name">BlockTalks</span>
             </div>
             <div class="col-6">
                 <!-- Search Bar -->
@@ -52,38 +110,43 @@
                         Start a New Topic
                     </div>
                     <div class="card-body">
-                        <form id="post-form">
+                        <form id="post-form" method="post" action="{% url 'send_message' %}">
+                            {% csrf_token %}
                             <div class="form-group">
                                 <label for="message-subject">Subject</label>
-                                <input type="text" class="form-control" id="message-subject" required>
+                                <input type="text" class="form-control" id="message-subject" name="title" required>
                             </div>
                             <div class="form-group">
                                 <label for="message-recipients">Recipients</label>
-                                <select class="form-control" id="message-recipients" multiple required>
-                                    <!-- Options for selecting recipients -->
-                                    <option value="friend">All Friends</option>
-                                    <option value="neighbor">All Neighbors</option>
-                                    <option value="block">Entire Block</option>
-                                    <option value="hood">Entire Hood</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="message-visibility">Visibility</label>
-                                <select class="form-control" id="message-visibility" required>
-                                    <!-- Options for selecting visibility -->
-                                    <option value="public">Public</option>
-                                    <option value="private">Private</option>
-                                </select>
+                                <ul class="recipient-options">
+                                    <li>
+                                        <input type="checkbox" id="recipient-friend" name="recipient" value="friend">
+                                        <label for="recipient-friend">All Friends</label>
+                                    </li>
+                                    <li>
+                                        <input type="checkbox" id="recipient-neighbor" name="recipient" value="neighbor">
+                                        <label for="recipient-neighbor">All Neighbors</label>
+                                    </li>
+                                    <li>
+                                        <input type="checkbox" id="recipient-block" name="recipient" value="block">
+                                        <label for="recipient-block">Entire Block</label>
+                                    </li>
+                                    <li>
+                                        <input type="checkbox" id="recipient-hood" name="recipient" value="hood">
+                                        <label for="recipient-hood">Entire Hood</label>
+                                    </li>
+                                </ul>
                             </div>
                             <div class="form-group">
                                 <label for="message-content">Message Content</label>
-                                <textarea class="form-control" id="message-content" rows="3" required></textarea>
+                                <textarea class="form-control" id="message-content" name="text_body" rows="6" required></textarea>
                             </div>
                             <button type="submit" class="btn btn-primary">Post</button>
                         </form>
                     </div>
                 </div>
             </div>
+            
             <div class="col-md-4">
                 <!-- Sidebar with filters -->
                 <div class="card">
@@ -114,22 +177,40 @@
                         Newly Joined Members
                     </div>
                     <ul class="list-group list-group-flush">
-                        <!-- Example member item -->
+                        <!-- Loop through the last three users -->
+                        {% for user in latest_users %}
                         <li class="list-group-item">
                             <div class="media">
-                                <img src="profile-image.jpg" class="mr-3 rounded-circle" alt="Profile Picture" style="width: 50px; height: 50px;">
+                                <img src="{% if user.user_photo %}{{ user.user_photo.url }}{% else %}{% static 'default_profile_image.jpg' %}{% endif %}" class="mr-3 rounded-circle" alt="Profile Picture" style="width: 50px; height: 50px;">
                                 <div class="media-body">
-                                    <h5 class="mt-0">New Member Name</h5>
-                                    <p class="text-muted">Joined 1 day ago</p>
-                                    <p>Additional information about the member...</p>
+                                    <h5 class="mt-0">{{ user.first_name }} {{ user.last_name }}</h5>
+                                    <p class="text-muted">Joined {{ user.created_at|timesince }} ago</p>
+                                    <p>{{ user.intro }}</p>
+                                    <!-- Add more information about the user as needed -->
                                 </div>
                             </div>
                         </li>
-                        <!-- Repeat for more members -->
+                        {% endfor %}
                     </ul>
                 </div>
             </div>
         </div>
+    </div>
+    <div class="card mt-4">
+        <div class="card-header">
+            Membership Requests
+        </div>
+        <ul class="list-group list-group-flush">
+            {% for application in membership_requests %}
+                <li class="list-group-item">
+                    <p>{{ application.applicant_id.user_name }} applied to join {{ application.block_id.block_name }}</p>
+                    <a href="{% url 'approve_membership' application_id=application.application_id %}" class="btn btn-success">Approve</a>
+                    <a href="{% url 'reject_membership' application_id=application.application_id %}" class="btn btn-danger">Reject</a>
+                </li>
+            {% empty %}
+                <li class="list-group-item">No pending membership requests</li>
+            {% endfor %}
+        </ul>
     </div>
     <!-- Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
@@ -137,84 +218,7 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <!-- Custom JavaScript -->
     <script>
-        // Sample data for threads and messages
-        const threadsData = [
-            { 
-                title: "Thread Title 1",
-                username: "User1",
-                time: "2 hours",
-                content: "This is the content of the thread...",
-                messages: [
-                    { content: "Message 1", author: "User1", timestamp: "1 hour ago" },
-                    { content: "Message 2", author: "User2", timestamp: "30 minutes ago" }
-                ]
-            },
-            // Add more threads here
-        ];
-
-        // Function to render messages for a thread
-        function renderMessages(messages) {
-            let messagesHTML = "";
-            messages.forEach(message => {
-                messagesHTML += `
-                    <div class="message">
-                        <p>${message.content}</p>
-                        <p class="text-muted">Posted by <a href="#">${message.author}</a> ${message.timestamp}</p>
-                        <button class="btn btn-sm btn-secondary reply-btn">Reply</button>
-                    </div>
-                `;
-            });
-            return messagesHTML;
-        }
-
-        // Function to render a thread
-        function renderThread(thread) {
-            const threadHTML = `
-                <li class="list-group-item">
-                    <h5><a href="#">${thread.title}</a></h5>
-                    <p class="text-muted">Posted by <a href="#">${thread.username}</a> ${thread.time} ago</p>
-                    <p>${thread.content}</p>
-                    <!-- Messages -->
-                    <div class="messages">
-                        ${renderMessages(thread.messages)}
-                    </div>
-                    <!-- End Messages -->
-                </li>
-            `;
-            return threadHTML;
-        }
-
-        // Function to add threads to the DOM
-        function addThreadsToDOM(threads) {
-            threads.forEach(thread => {
-                const threadHTML = renderThread(thread);
-                $('#thread-list').append(threadHTML);
-            });
-        }
-
-        // Add sample threads to the DOM
-        $(document).ready(function() {
-            addThreadsToDOM(threadsData);
-        });
-
-        // Event listener for post form submission
-        $('#post-form').submit(function(event) {
-            event.preventDefault();
-            const subject = $('#message-subject').val();
-            const recipients = $('#message-recipients').val();
-            const visibility = $('#message-visibility').val();
-            const content = $('#message-content').val();
-            // Handle posting message to backend (not implemented in this example)
-            console.log("Subject:", subject);
-            console.log("Recipients:", recipients);
-            console.log("Visibility:", visibility);
-            console.log("Message Content:", content);
-            // Clear the form inputs
-            $('#message-subject').val('');
-            $('#message-recipients').val([]);
-            $('#message-visibility').val('public');
-            $('#message-content').val('');
-        });
+        // You can keep your custom JavaScript here, if needed
     </script>
 </body>
 </html>
