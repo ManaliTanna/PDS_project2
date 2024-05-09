@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Applications</title>
+</head>
+<body>
+    <div class="container">
+        <h1>Your Applications</h1>
+        <ul>
+            {% for status, block_name in applications %}
+                <li>{{ block_name }} - Status: {{ status }}</li>
+            {% empty %}
+                <li>You have no applications.</li>
+            {% endfor %}
+        </ul>
+    </div>
+</body>
+</html>
