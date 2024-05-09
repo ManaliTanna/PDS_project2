@@ -11,7 +11,7 @@ urlpatterns = [
     path('blocks/', views.blocks, name='blocks'),
     path('search_blocks/', views.search_blocks, name='search_blocks'),
     path('insert_application/', views.insert_application, name='insert_application'),
-    path('my_applications/', view_applications, name='view_applications'),
+    path('my_applications/', view_applications, name='my_applications'),
     path('logout/', views.user_logout, name='logout'),
 ]
 

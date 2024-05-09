@@ -140,12 +140,10 @@ def search_blocks(request):
                 dict(zip(columns, row))
                 for row in rows
             ]
-
     # Render the same template whether or not there was a search
     return render(request, 'blocks.html', {'blocks': blocks})
 
 def insert_application(request):
-
     if request.method == 'POST' and 'user_name' in request.POST and 'block_name' in request.POST:
         print(request.POST)
         user_name = request.POST['user_name']
@@ -175,9 +173,10 @@ def insert_application(request):
     return render(request, 'success.html')
 
 def view_applications(request):
-    user_id = request.user.id  # Get the currently logged-in user's ID
+    if 'is_logged_in' in request.session and request.session['is_logged_in']:
+        user_id = request.session['user_id']
     applications = []
-
+    print(user_id)
     with connection.cursor() as cursor:
         cursor.execute("""
             SELECT a.application_status, b.block_name
@@ -189,6 +188,7 @@ def view_applications(request):
     context = {
         'applications': applications
     }
+    print(applications)
     return render(request, 'view_applications.html', {'applications': applications})
 
 
