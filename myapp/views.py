@@ -4,7 +4,7 @@ from django.contrib.auth.hashers import check_password
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 
-from .models import Users, Blocks, Address
+from .models import Users, Blocks, Address, Neighbors
 
 from .forms.signup import UserSignupForm
 from .forms.address import AddressForm
@@ -277,5 +277,48 @@ def reject_membership(request, application_id):
 
         return HttpResponse("Membership rejected successfully")
     
+from .models import Users
 
+def users(request):
+    users = Users.objects.all()
+    return render(request, 'users.html', {'users': users})
+
+def find_user(username):
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT * FROM users WHERE user_name = %s", [username])
+        result = cursor.fetchall()
+        return result
+    
+def search_users(request):
+    users = []  # This will hold the search results
+    if 'search_term' in request.GET:
+        search_term = request.GET['search_term']
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM users WHERE user_name ILIKE %s", [f"%{search_term}%"])
+            rows = cursor.fetchall()
+            columns = [col[0] for col in cursor.description]
+            users = [
+                dict(zip(columns, row))
+                for row in rows
+            ]
+
+    # Render the same template whether or not there was a search
+    return render(request, 'users.html', {'users': users})
+
+def add_neighbor(request):
+    if request.method == 'POST':
+        user_id = request.POST.get('user_id')
+
+        # Check if the user is already a neighbor
+        is_neighbor = Neighbors.objects.filter(user_id=user_id).exists()
+
+        if not is_neighbor:
+            # Add the user as a neighbor
+            with connection.cursor() as cursor:
+                cursor.execute("INSERT INTO neighbors (user_id, neighbor_id) VALUES (%s, %s)", [request.user.id, user_id])
+
+        return redirect('users')
+
+    # Handle GET requests if needed
+    return HttpResponseNotAllowed(['POST'])
 

@@ -15,7 +15,10 @@ urlpatterns = [
     path('membership_requests/', views.membership_requests, name='membership_requests'),
     path('approve_membership/<int:application_id>/', views.approve_membership, name='approve_membership'),
     path('reject_membership/<int:application_id>/', views.reject_membership, name='reject_membership'),
-    
+    path('users/', views.users, name='users'),
+    path('search_users/', views.search_users, name='search_users'),
+    path('add_neighbor/', views.add_neighbor, name='add_neighbor'),
+
 
 ]
 
