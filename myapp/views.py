@@ -106,7 +106,21 @@ def profile(request):
     
 def blocks(request):
     blocks = Blocks.objects.all()
-    return render(request, 'blocks.html', {'blocks': blocks})
+    # return render(request, 'blocks.html', {'blocks': blocks})
+    if 'is_logged_in' in request.session and request.session['is_logged_in']:
+        user_id = request.session['user_id']
+        try:
+            user = Users.objects.get(user_id=user_id)
+            print(user.addr_id.addr_id)
+            context = {
+                'user': user,
+                'blocks': blocks 
+            }
+            return render(request, 'blocks.html', context)
+        except Users.DoesNotExist:
+            return HttpResponse('User does not exist.', status=404)
+    else:
+        return redirect('login')
 
 def find_block(block_name):
     with connection.cursor() as cursor:
@@ -129,5 +143,53 @@ def search_blocks(request):
 
     # Render the same template whether or not there was a search
     return render(request, 'blocks.html', {'blocks': blocks})
+
+def insert_application(request):
+
+    if request.method == 'POST' and 'user_name' in request.POST and 'block_name' in request.POST:
+        print(request.POST)
+        user_name = request.POST['user_name']
+        block_name = request.POST['block_name']
+
+        application_status = 'pending'  # Since the status is default set to 'pending'
+
+        with connection.cursor() as cursor:
+            try:
+                # Insert only if not already applied
+                cursor.execute("""
+                    INSERT INTO applications (block_id, applicant_id, application_status)
+                    SELECT (SELECT block_id FROM Blocks WHERE block_name = %s),
+                           (SELECT user_id FROM Users WHERE user_name = %s),
+                           %s
+                    WHERE NOT EXISTS (
+                        SELECT 1 FROM applications WHERE block_id = (SELECT block_id FROM Blocks WHERE block_name = %s) AND applicant_id = (SELECT user_id FROM Users WHERE user_name = %s)
+                    );
+                """, [block_name, user_name, application_status, block_name, user_name])
+                if cursor.rowcount > 0:
+                    print('Application inserted successfully.')
+                else:
+                    print('You have already applied to this block.')
+            except Exception as e:
+                print('Error inserting application: {str(e)}')
+
+    return render(request, 'success.html')
+
+def view_applications(request):
+    user_id = request.user.id  # Get the currently logged-in user's ID
+    applications = []
+
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT a.application_status, b.block_name
+            FROM applications a
+            JOIN blocks b ON a.block_id = b.block_id
+            WHERE a.applicant_id = %s
+        """, [user_id])
+        applications = cursor.fetchall()
+    context = {
+        'applications': applications
+    }
+    return render(request, 'view_applications.html', {'applications': applications})
+
 
 

@@ -1,3 +1,7 @@
 from django.contrib import admin
+from .models import Blocks, Hoods  
 
-# Register your models here.
+
+admin.site.register(Blocks)
+admin.site.register(Hoods)
+
