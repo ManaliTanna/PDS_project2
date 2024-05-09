@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Membership Requests</title>
+</head>
+<body>
+    <h1>Membership Requests</h1>
+    <ul>
+        {% for request in membership_requests %}
+            <li>
+                <p>Applicant: {{ request.applicant_id.first_name }} {{ request.applicant_id.last_name }}</p>
+                <p>Block: {{ request.block_id.block_name }}</p>
+                <form action="{% url 'approve_membership' request.application_id %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit">Approve</button>
+                </form>
+                <form action="{% url 'reject_membership' request.application_id %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit">Reject</button>
+                </form>
+            </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

@@ -104,7 +104,7 @@ class Neighbors(models.Model):
 class Thread(models.Model):
     thread_id = models.AutoField(primary_key=True)
     thread_title = models.CharField(max_length=100)
-    first_sender_id = models.ForeignKey(Users, on_delete=models.CASCADE, db_column='first_sender_id')
+    first_sender_id = models.ForeignKey(Users, on_delete=models.CASCADE, db_column='user_id')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:

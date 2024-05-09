@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Available Users</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <style>
+        /* Add custom CSS styles here */
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1>Available Users</h1>
+        <!-- Search form -->
+        <form method="get" action="{% url 'search_users' %}" class="input-group mb-3">
+            <input type="text" name="search_term" class="form-control" placeholder="Search for users..." aria-label="Search for users">
+            <div class="input-group-append">
+                <button class="btn btn-primary" type="submit" id="search-button">Search</button>
+            </div>
+        </form>
+        <!-- Users list -->
+        <ul class="list-group">
+            {% for user in users %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                {{ user.first_name }} {{ user.last_name }}
+                <span>
+                    <button class="btn btn-primary btn-sm" onclick="addFriend('{{ user.user_id }}')">Add Friend</button>
+                    <button class="btn btn-success btn-sm" onclick="addNeighbor('{{ user.user_id }}')">Add Neighbor</button>
+                </span>
+            </li>
+            {% empty %}
+            <li class="list-group-item">No users found.</li>
+            {% endfor %}
+        </ul>
+    </div>
+    <!-- Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <!-- Custom JavaScript -->
+    <script>
+        function addFriend(userId) {
+            // Send a request to your backend to add the user as a friend
+            console.log('Adding user ' + userId + ' as a friend...');
+        }
+
+        function addNeighbor(userId) {
+            // Send a request to your backend to add the user as a neighbor
+            console.log('Adding user ' + userId + ' as a neighbor...');
+        }
+    </script>
+</body>
+</html>
