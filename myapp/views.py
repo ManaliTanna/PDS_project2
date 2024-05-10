@@ -1,14 +1,27 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, JsonResponse
 from django.contrib.auth.hashers import check_password
+from django.urls import reverse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
-
+from django.db.utils import IntegrityError
+from django.db import DatabaseError, transaction 
 from .models import Users, Blocks, Address, Neighbors
-
 from .forms.signup import UserSignupForm
 from .forms.address import AddressForm
-
+from django.db import connection
+from .models import Applications, Membership
+from django.shortcuts import render
+from django.http import HttpResponse
+from .models import Message, Thread
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+from django.db import connection
+from django.utils.dateparse import parse_datetime
+from django.db import transaction 
+from django.shortcuts import render
+from django.http import HttpResponse
+from .models import Users, Friendship
 from django.db import connection
     
 def home(request):
@@ -165,34 +178,66 @@ def search_blocks(request):
     # Render the same template whether or not there was a search
     return render(request, 'blocks.html', {'blocks': blocks})
 
+
 def insert_application(request):
-    if request.method == 'POST' and 'user_name' in request.POST and 'block_name' in request.POST:
-        print(request.POST)
-        user_name = request.POST['user_name']
-        block_name = request.POST['block_name']
+    if 'is_logged_in' in request.session and request.session['is_logged_in']:
+        user_id = request.session['user_id']
+        if request.method == 'POST' and 'user_name' in request.POST and 'block_name' in request.POST:
+            print(request.POST)
+            user_name = request.POST['user_name']
+            block_name = request.POST['block_name']
 
-        application_status = 'pending'  # Since the status is default set to 'pending'
+            application_status = 'pending'  # Since the status is default set to 'pending'
+            membership_status = 'not approved'
+            membership_permissions = 'read'
 
-        with connection.cursor() as cursor:
-            try:
-                # Insert only if not already applied
-                cursor.execute("""
-                    INSERT INTO applications (block_id, applicant_id, application_status)
-                    SELECT (SELECT block_id FROM Blocks WHERE block_name = %s),
-                           (SELECT user_id FROM Users WHERE user_name = %s),
-                           %s
-                    WHERE NOT EXISTS (
-                        SELECT 1 FROM applications WHERE block_id = (SELECT block_id FROM Blocks WHERE block_name = %s) AND applicant_id = (SELECT user_id FROM Users WHERE user_name = %s)
-                    );
-                """, [block_name, user_name, application_status, block_name, user_name])
-                if cursor.rowcount > 0:
-                    print('Application inserted successfully.')
-                else:
-                    print('You have already applied to this block.')
-            except Exception as e:
-                print('Error inserting application: {str(e)}')
+            with connection.cursor() as cursor:
+                try:
+                    # Transaction block starts here
+                    with transaction.atomic():  # Use the transaction.atomic() to manage your transaction
+                        # Insert application if not already applied
+                        cursor.execute("""
+                            INSERT INTO applications (block_id, applicant_id, application_status)
+                            SELECT block_id, user_id, %s
+                            FROM Blocks, Users
+                            WHERE block_name = %s AND user_id = %s
+                            AND NOT EXISTS (
+                                SELECT 1 FROM applications WHERE block_id = (SELECT block_id FROM Blocks WHERE block_name = %s) AND applicant_id = %s
+                            );
+                        """, [application_status, block_name, user_id, block_name, user_id])
 
-    return render(request, 'success.html')
+                        if cursor.rowcount > 0:
+                            print('Application inserted successfully.')
+                            # Insert membership
+                            cursor.execute("""
+                                INSERT INTO membership (block_id, user_id, status, permissions)
+                                SELECT block_id, user_id, %s, %s
+                                FROM Blocks, Users
+                                WHERE block_name = %s AND user_id = %s;
+                            """, [membership_status, membership_permissions, block_name, user_id])
+                            print('Membership entry created.')
+
+                            cursor.execute("""
+                                SELECT application_id FROM applications
+                                WHERE block_id = (SELECT block_id FROM Blocks WHERE block_name = %s)
+                                AND applicant_id = %s;
+                            """, [block_name, user_id])
+                            application_id = cursor.fetchone()[0]
+
+                            # Insert vote with default count of 0
+                            cursor.execute("""
+                                INSERT INTO votes (voter_id, application_id, vote_count)
+                                VALUES (%s, %s, %s);
+                            """, [None, application_id, 0])
+                            print('Vote record added with default count of 0.')
+                        else:
+                            print('You have already applied to this block.')
+
+                except Exception as e:
+                    print(f'Error inserting application: {str(e)}')
+
+        return render(request, 'success.html')
+
 
 def view_applications(request):
     if 'is_logged_in' in request.session and request.session['is_logged_in']:
@@ -214,32 +259,50 @@ def view_applications(request):
     return render(request, 'view_applications.html', {'applications': applications})
 
 
-from django.shortcuts import render
-from django.http import HttpResponse
-from .models import Message, Thread
 
+from django.http import JsonResponse, HttpResponse
+from django.db import connection
+from django.views.decorators.http import require_POST
+
+# @require_POST  # Ensures that this view can only handle POST requests.
 def send_message(request):
-    if request.method == 'POST':
-        user_id = request.user.id  # Assuming you have a user authentication system
-        title = request.POST.get('title')
+    print("HI")
+    print(request.POST)
+    if 'is_logged_in' in request.session and request.session['is_logged_in']:
+        user_id = request.session['user_id']
+        thread_title = request.POST.get('thread_title')
         recipient = request.POST.get('recipient')
+        friend_id = request.POST.get('friend_id')
+        block_id = request.POST.get('block_id')
+        hood_id = request.POST.get('hood_id')
         text_body = request.POST.get('text_body')
+        addr_id = request.POST.get('addr_id')  # Make sure to capture all needed fields.
+
+        query1 = '''
+        INSERT INTO Thread (thread_title)
+        VALUES (%s)
+        RETURNING thread_id;'''
         
-        # Assuming you have a method to determine thread_id based on recipient
-        thread_id = 2  
+        query2 = '''
+        INSERT INTO Message (user_id, thread_id, recipient, friend_id, block_id, hood_id, text_body, addr_id)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
+        '''
 
-        # Create a new thread if it doesn't exist
-        if not Thread.objects.filter(id=thread_id).exists():
-            thread_name = f"Thread for {recipient}"
-            Thread.objects.create(id=thread_id, thread_name=thread_name, first_sender_id=user_id)
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(query1, [thread_title])
+                thread_id = cursor.fetchone()[0]  # Fetch the newly created thread_id
+                
+                cursor.execute(query2, (user_id, thread_id, recipient, friend_id, block_id, hood_id, text_body, addr_id))
+                print(query2, (user_id, thread_id, recipient, friend_id, block_id, hood_id, text_body, addr_id))
+                connection.commit()  # Ensure the transaction is committed
 
-        # Create the message
-        message = Message(user_id=user_id, thread_id=thread_id, title=title, recipient=recipient, text_body=text_body)
-        message.save()
+            return JsonResponse({'status': 'success'}, status=201)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
+    else:
+        return HttpResponse("Unauthorized", status=401)
 
-        return HttpResponse("Message sent successfully")
-
-    return render(request, 'send_message.html')
 
 def get_messages(request, user_id):
     message_feeds = {}
@@ -310,36 +373,85 @@ def search_messages(request):
     # Render the same template whether or not there was a search
     return render(request, 'messages.html', {'messages': messages})
 
-from .models import Applications, Membership
-
 def membership_requests(request):
+    if 'is_logged_in' in request.session and request.session['is_logged_in']:
+        user_id = request.session['user_id']
     if request.method == 'GET':
-        # Fetch all pending membership applications
-        membership_requests = Applications.objects.filter(application_status='pending')
+        membership_requests = []
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT a.application_id, 
+                    a.block_id, 
+                    b.block_name,
+                    a.applicant_id, 
+                    u.user_name,
+                    a.application_status,
+                    v.vote_count
+                FROM Applications a
+                JOIN Membership m ON a.block_id = m.block_id
+                JOIN Blocks b ON a.block_id = b.block_id
+                JOIN Users u ON a.applicant_id = u.user_id
+                JOIN votes v ON a.application_id = v.application_id
+                WHERE m.user_id = %s and v.vote_count < 3
+            """, [user_id])
+            rows = cursor.fetchall()
+            columns = [col[0] for col in cursor.description]
+            membership_requests = [
+                dict(zip(columns, row))
+                for row in rows
+            ]
+        print(membership_requests)
         return render(request, 'membership_requests.html', {'membership_requests': membership_requests})
 
-def approve_membership(request, application_id):
-    if request.method == 'POST':
-        # Approve the membership application
-        application = Applications.objects.get(application_id=application_id)
-        application.application_status = 'approved'
-        application.save()
-
-        # Create a membership record for the approved user and block
-        Membership.objects.create(user_id=application.applicant_id, block_id=application.block_id, status='approved', permissions='read')
-
-        return HttpResponse("Membership approved successfully")
-
-def reject_membership(request, application_id):
-    if request.method == 'POST':
-        # Reject the membership application
-        application = Applications.objects.get(application_id=application_id)
-        application.application_status = 'rejected'
-        application.save()
-
-        return HttpResponse("Membership rejected successfully")
     
-from .models import Users
+def insert_vote(request,application_id):
+    if 'is_logged_in' in request.session and request.session['is_logged_in']:
+        user_id = request.session['user_id']
+        if request.method == 'POST':
+            print("application_id", application_id)
+            with connection.cursor() as cursor:
+                try:
+                    cursor.execute(""" SELECT applicant_id FROM applications WHERE application_id = %s;
+                                   """, [application_id])
+                    row = cursor.fetchone()
+                    if row is not None:
+                        applicant_id = row[0]
+                    else:
+                        return ("Application ID not found")
+                    # Insert or increment vote record
+                    cursor.execute("""
+                        INSERT INTO votes (voter_id, application_id, vote_count)
+                        VALUES (
+                            (SELECT user_id FROM Users WHERE user_id = %s),
+                            %s,
+                            1
+                        )
+                        ON CONFLICT (application_id) DO UPDATE
+                        SET vote_count = votes.vote_count + 1
+                        WHERE votes.application_id = %s
+                        RETURNING vote_count;
+                    """, [user_id, application_id, application_id])
+                    vote_count = cursor.fetchone()[0]
+                    print('Voted successfully.')
+
+                    # Check if vote count has reached 3, then update membership status to 'approved'
+                    if vote_count == 3:
+                        print("VOTE 3 hogya")
+                        cursor.execute("""
+                            UPDATE membership
+                            SET status = 'approved',permissions = 'read'
+                            WHERE block_id = (SELECT block_id FROM applications WHERE application_id = %s)
+                            AND user_id = %s;
+                            UPDATE votes
+                            SET voter_id = %s where application_id = %s;
+                        """, [application_id, applicant_id, user_id, application_id])
+                        print('Membership status updated to approved.')
+                
+                    
+                except IntegrityError as e:
+                    print('Error inserting or updating vote:', str(e))
+                    print('You may have already voted or there is another constraint violation.')
+    return render(request, 'success.html')
 
 def users(request):
     users = Users.objects.all()
@@ -367,20 +479,103 @@ def search_users(request):
     # Render the same template whether or not there was a search
     return render(request, 'users.html', {'users': users})
 
-def add_neighbor(request):
-    if request.method == 'POST':
-        user_id = request.POST.get('user_id')
+def add_neighbor(request, neighbor_id):
+    if 'is_logged_in' in request.session and request.session['is_logged_in']:
+        user_id = request.session['user_id']
+        if request.method == 'POST':
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute("INSERT INTO neighbors (user_id, neighbor_id) VALUES (%s, %s)", [user_id, neighbor_id])
+                return render(request, 'success.html')
+            except IntegrityError:
+                # Handle specific database integrity issues, e.g., duplicate entries
+                return HttpResponse("Cannot add duplicate neighbor entry.", status=409)
+            except DatabaseError:
+                # Handle general database errors
+                return HttpResponse("Database error occurred.", status=500)
+            except Exception as e:
+                # Log exception or send it to your error tracking system
+                print(f"An error occurred: {e}")  # Simple print, replace with logging if necessary
+    # Redirect to home page on any other issues or if not a POST request
+    return redirect(reverse('home'))  # Assumes 'home' is the name of the URL pattern for your home page
 
-        # Check if the user is already a neighbor
-        is_neighbor = Neighbors.objects.filter(user_id=user_id).exists()
+def add_friend(request, friend_id):
+    if 'is_logged_in' in request.session and request.session['is_logged_in']:
+        user_id = request.session['user_id']
+        if request.method == 'POST':
+            try:
+                with connection.cursor() as cursor:
+                    # Attempt to insert a new friendship
+                    cursor.execute("INSERT INTO friendship (user_id, friend_id) VALUES (%s, %s)", [user_id, friend_id])
+                return render(request, 'success.html')
+            except IntegrityError:
+                # Handle specific database integrity issues
+                return HttpResponse("Cannot add duplicate friendship entry.", status=409)
+            except DatabaseError:
+                # Handle other database errors
+                return HttpResponse("Database error occurred.", status=500)
+            except Exception as e:
+                # Handle unexpected exceptions
+                # Ideally, log this error to a logging system
+                print(f"An error occurred: {e}")  # Simple print, replace with logging if necessary
+    # Redirect to home page on any other issues or if not a POST request
+    return redirect(reverse('home'))  # Assumes 'home' is the name of the URL pattern for your home page
 
-        if not is_neighbor:
-            # Add the user as a neighbor
-            with connection.cursor() as cursor:
-                cursor.execute("INSERT INTO neighbors (user_id, neighbor_id) VALUES (%s, %s)", [request.user.id, user_id])
+def view_member_status(request):
+    if 'is_logged_in' in request.session and request.session['is_logged_in']:
+        user_id = request.session['user_id']
+    try:
+        membership = Membership.objects.get(user_id=user_id)
+        block = membership.block_id.block_name
+        status = membership.status
+        response = f"Membership Status: {status}, Block: {block}"
+    except Membership.DoesNotExist:
+        response = "No membership information found."
+    return HttpResponse(response)
 
-        return redirect('users')
+def list_friends(request):
+    if 'is_logged_in' in request.session and request.session['is_logged_in']:
+        user_id = request.session['user_id']  # Assumed to be set during user login
 
-    # Handle GET requests if needed
-    return HttpResponseNotAllowed(['POST'])
+        with connection.cursor() as cursor:
+            # Use the user_id directly from the session for the SQL query
+            cursor.execute("""
+                SELECT u.*
+                FROM users u
+                JOIN friendship f ON u.user_id = f.friend_id
+                WHERE f.user_id = %s
+            """, [user_id])
+            friends_raw = cursor.fetchall()  # Fetch all records
+
+        # Assuming that the indices 3 and 4 in friends_raw correspond to first_name and last_name
+        friends_list = [f"Friend: {friend[3]} {friend[4]}" for friend in friends_raw]
+
+        return render(request, 'friends_list.html', {'friends': friends_list})
+    else:
+        return HttpResponse("Please login to see the friends list.")
+    
+def list_neighbors(request):
+    if 'is_logged_in' in request.session and request.session['is_logged_in']:
+        user_id = request.session['user_id']  # Assumed to be set during user login
+
+        with connection.cursor() as cursor:
+            # Use the user_id directly from the session for the SQL query
+            cursor.execute("""
+                SELECT u.*
+                FROM users u
+                JOIN neighbors f ON u.user_id = f.neighbor_id
+                WHERE f.user_id = %s
+            """, [user_id])
+            neighbors_raw = cursor.fetchall()  # Fetch all records
+
+        # Assuming that the indices 3 and 4 in friends_raw correspond to first_name and last_name
+        neighbors_list = [f"neighbors: {neighbor[3]} {neighbor[4]}" for neighbor in neighbors_raw]
+
+        return render(request, 'neighbors_list.html', {'neighbors': neighbors_list})
+    else:
+        return HttpResponse("Please login to see the friends list.")
+
+
+    
+
 

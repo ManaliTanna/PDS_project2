@@ -12,7 +12,7 @@ form {
 }
 input[type="text"],
 input[type="password"],
-button[type="submit"] {
+button {
     display: block;
     margin: 10px auto;
 }
@@ -21,13 +21,17 @@ button[type="submit"] {
 <body>
 <h2>Login</h2>
 <form method="post">
-{% csrf_token %}
-{% if error %}
-<p>{{ error }}</p>
-{% endif %}
-<input type="text" name="username" placeholder="Username"><br>
-<input type="password" name="password" placeholder="Password"><br>
-<button type="submit">Login</button>
+    {% csrf_token %}
+    {% if error %}
+    <p style="color: red;">{{ error }}</p>
+    {% endif %}
+    <input type="text" name="username" placeholder="Username">
+    <input type="password" name="password" placeholder="Password">
+    <button type="submit">Login</button>
+    <!-- Reset Password Button/link -->
+    <button type="button">Reset Password</button>
+    <!-- Signup Button/link -->
+    <button type="button" onclick="location.href='{% url 'signup' %}'">Sign Up</button>
 </form>
 </body>
 </html>

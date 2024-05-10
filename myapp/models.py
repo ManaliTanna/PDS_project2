@@ -1,7 +1,7 @@
 from django.db import models
 
 class Hoods(models.Model):
-    hood_id = models.AutoField(primary_key=True)
+    hood_id = models.AutoField(primary_key=True, db_column='hood_id')
     hood_name = models.CharField(max_length=50, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -11,7 +11,7 @@ class Hoods(models.Model):
 class Blocks(models.Model):
     block_id = models.AutoField(primary_key=True)
     block_name = models.CharField(max_length=50, unique=True)
-    hood_id = models.ForeignKey(Hoods, on_delete=models.CASCADE, db_column='hood_id')
+    hood_id = models.ForeignKey(Hoods, on_delete=models.CASCADE, db_column='hood_id', to_field='hood_id')
     block_description = models.TextField(default='')
     latitude = models.FloatField(default=0.0)
     longitude = models.FloatField(default=0.0)
@@ -55,8 +55,8 @@ class Users(models.Model):
 
 class Membership(models.Model):
     membership_id = models.AutoField(primary_key=True)
-    user_id = models.ForeignKey(Users, on_delete=models.CASCADE, db_column='user_id')
-    block_id = models.ForeignKey(Blocks, on_delete=models.CASCADE, db_column='block_id')
+    user_id = models.ForeignKey(Users, on_delete=models.CASCADE, db_column='user_id', to_field='user_id')
+    block_id = models.ForeignKey(Blocks, on_delete=models.CASCADE, db_column='block_id', to_field='block_id')
     status = models.CharField(max_length=15, choices=(('approved', 'Approved'), ('not approved', 'Not Approved')))
     permissions = models.CharField(max_length=10, choices=(('read', 'Read'), ('write', 'Write')))
     created_at = models.DateTimeField(auto_now_add=True)
@@ -66,8 +66,8 @@ class Membership(models.Model):
 
 class Applications(models.Model):
     application_id = models.AutoField(primary_key=True)
-    block_id = models.ForeignKey(Blocks, on_delete=models.CASCADE, db_column='block_id')
-    applicant_id = models.ForeignKey(Users, on_delete=models.CASCADE, db_column='applicant_id')
+    block_id = models.ForeignKey(Blocks, on_delete=models.CASCADE, db_column='block_id', to_field='block_id')
+    applicant_id = models.ForeignKey(Users, on_delete=models.CASCADE, db_column='applicant_id', to_field='user_id')
     application_status = models.CharField(max_length=20, choices=(('pending', 'Pending'), ('approved', 'Approved'), ('rejected', 'Rejected')))
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -76,16 +76,17 @@ class Applications(models.Model):
 
 class Votes(models.Model):
     vote_id = models.AutoField(primary_key=True)
-    voter_id = models.ForeignKey(Users, on_delete=models.CASCADE, db_column='voter_id')
-    application_id = models.ForeignKey(Applications, on_delete=models.CASCADE, db_column='application_id')
+    voter_id = models.ForeignKey(Users, on_delete=models.CASCADE, db_column='voter_id', to_field='user_id')
+    application_id = models.ForeignKey(Applications, unique=True,  on_delete=models.CASCADE, db_column='application_id', to_field='application_id')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    vote_count = models.IntegerField(default=0)
     class Meta:
         db_table = 'votes'
 
 class Friendship(models.Model):
-    user_id = models.ForeignKey(Users, related_name='friendship_user', on_delete=models.CASCADE, db_column='user_id')
-    friend_id = models.ForeignKey(Users, related_name='friendship_friend', on_delete=models.CASCADE, null=True, db_column='friend_id')
+    user_id = models.ForeignKey(Users, related_name='friendship_user', on_delete=models.CASCADE, db_column='user_id', to_field='user_id')
+    friend_id = models.ForeignKey(Users, related_name='friendship_friend', on_delete=models.CASCADE, null=True, db_column='friend_id', to_field='user_id')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
@@ -93,8 +94,8 @@ class Friendship(models.Model):
         unique_together = ('user_id', 'friend_id')
 
 class Neighbors(models.Model):
-    user_id = models.ForeignKey(Users, related_name='neighbor_user', on_delete=models.CASCADE, db_column='user_id')
-    neighbor_id = models.ForeignKey(Users, related_name='neighbor_neighbor', on_delete=models.CASCADE, db_column='neighbor_id')
+    user_id = models.ForeignKey(Users, related_name='neighbor_user', on_delete=models.CASCADE, db_column='user_id', to_field='user_id')
+    neighbor_id = models.ForeignKey(Users, related_name='neighbor_neighbor', on_delete=models.CASCADE, db_column='neighbor_id', to_field='user_id')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
@@ -104,7 +105,7 @@ class Neighbors(models.Model):
 class Thread(models.Model):
     thread_id = models.AutoField(primary_key=True)
     thread_title = models.CharField(max_length=100)
-    first_sender_id = models.ForeignKey(Users, on_delete=models.CASCADE, db_column='user_id')
+    first_sender_id = models.ForeignKey(Users, on_delete=models.CASCADE, db_column='user_id', to_field='user_id')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
@@ -112,17 +113,17 @@ class Thread(models.Model):
 
 class Message(models.Model):
     message_id = models.AutoField(primary_key=True)
-    user_id = models.ForeignKey(Users, on_delete=models.CASCADE, db_column='user_id')
-    thread_id = models.ForeignKey(Thread, on_delete=models.CASCADE, db_column='thread_id')
+    user_id = models.ForeignKey(Users, on_delete=models.CASCADE, db_column='user_id', to_field='user_id')
+    thread_id = models.ForeignKey(Thread, on_delete=models.CASCADE, db_column='thread_id', to_field='thread_id')
     reply_to_message_id = models.ForeignKey('self', on_delete=models.CASCADE, null=True)
     title = models.CharField(max_length=100)
     timestamp = models.DateTimeField(auto_now_add=True)
     recipient = models.CharField(max_length=15, choices=(('friend', 'Friend'), ('neighbor', 'Neighbor'), ('block', 'Block'), ('hood', 'Hood')))
-    friend_id = models.ForeignKey(Users, related_name='message_friend', on_delete=models.CASCADE, null=True, db_column='friend_id')
-    block_id = models.ForeignKey(Blocks, on_delete=models.CASCADE, null=True, db_column='block_id')
-    hood_id = models.ForeignKey(Hoods, on_delete=models.CASCADE, null=True, db_column='hood_id')
+    friend_id = models.ForeignKey(Users, related_name='message_friend', on_delete=models.CASCADE, null=True, db_column='friend_id', to_field='user_id')
+    block_id = models.ForeignKey(Blocks, on_delete=models.CASCADE, null=True, db_column='block_id', to_field='block_id')
+    hood_id = models.ForeignKey(Hoods, on_delete=models.CASCADE, null=True, db_column='hood_id',    to_field='hood_id')
     text_body = models.TextField()
-    addr_id = models.ForeignKey(Address, on_delete=models.CASCADE, null=True, db_column='addr_id')
+    addr_id = models.ForeignKey(Address, on_delete=models.CASCADE, null=True, db_column='addr_id', to_field='addr_id')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:

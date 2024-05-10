@@ -85,11 +85,14 @@
                     <button class="btn btn-outline-primary my-2 my-sm-0" type="submit">Search</button>
                 </form>
             </div>
-            <div class="col-1 text-right">
-                <!-- Profile -->
-                <div class="col- text-right">
+            <div class="col-2 text-right">
+                <!-- Profile Section with Better Spacing and Styling -->
+                <div class="col-4 text-right" style="padding-right: 20px;">
                     <!-- Profile button with direct link -->
-                    <a href="{% url 'profile' %}" class="btn btn-secondary">Profile</a>
+                    <a href="{% url 'profile' %}" class="btn btn-secondary" style="margin-bottom: 10px;">My Profile</a>
+                    <br>
+                    <!-- Membership button with some margin for separation -->
+                    <a href="{% url 'view_member_status' %}" class="btn btn-secondary" style="margin-bottom: 10px;">My Membership</a>
                 </div>
             </div>
         </div>
@@ -166,10 +169,12 @@
                         Options
                     </div>
                     <ul class="list-group list-group-flush">
-                        <li class="list-group-item"><a href="#">Threads with New Messages</a></li>
-                        <li class="list-group-item"><a href="{% url 'users' %}">Members</a></li>
+                        <li class="list-group-item"><a href="{% url 'users' %}">All Users</a></li>
+                        <li class="list-group-item"><a href="{% url 'list_friends' %}">My Friends</a></li>
+                        <li class="list-group-item"><a href="{% url 'list_neighbors' %}">My Neighbours</a></li>
                         <li class="list-group-item"><a href="{% url 'blocks' %}">Apply to Join a Block</a></li>
                         <li class="list-group-item"><a href="{% url 'my_applications' %}">My Applications to Join a Block</a></li>
+                        <li class="list-group-item"><a href="{% url 'membership_requests' %}">Membership Requests</a></li>
                     </ul>
                 </div>
                 <!-- Newly joined members -->
@@ -196,22 +201,6 @@
                 </div>
             </div>
         </div>
-    </div>
-    <div class="card mt-4">
-        <div class="card-header">
-            Membership Requests
-        </div>
-        <ul class="list-group list-group-flush">
-            {% for application in membership_requests %}
-                <li class="list-group-item">
-                    <p>{{ application.applicant_id.user_name }} applied to join {{ application.block_id.block_name }}</p>
-                    <a href="{% url 'approve_membership' application_id=application.application_id %}" class="btn btn-success">Approve</a>
-                    <a href="{% url 'reject_membership' application_id=application.application_id %}" class="btn btn-danger">Reject</a>
-                </li>
-            {% empty %}
-                <li class="list-group-item">No pending membership requests</li>
-            {% endfor %}
-        </ul>
     </div>
     <!-- Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>

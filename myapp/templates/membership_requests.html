@@ -10,17 +10,16 @@
     <ul>
         {% for request in membership_requests %}
             <li>
-                <p>Applicant: {{ request.applicant_id.first_name }} {{ request.applicant_id.last_name }}</p>
-                <p>Block: {{ request.block_id.block_name }}</p>
-                <form action="{% url 'approve_membership' request.application_id %}" method="post">
+                <p>Applicant: {{ request.user_name }}</p>
+                <p>Block: {{ request.block_name }}</p>
+                <p>Current vote count: {{ request.vote_count}}</p>
+                    <form action="{% url 'insert_vote' request.application_id %}" method="post">
                     {% csrf_token %}
                     <button type="submit">Approve</button>
                 </form>
-                <form action="{% url 'reject_membership' request.application_id %}" method="post">
-                    {% csrf_token %}
-                    <button type="submit">Reject</button>
-                </form>
             </li>
+        {% empty %}
+            <li>You have no applications to review right now.</li>
         {% endfor %}
     </ul>
 </body>

@@ -16,13 +16,14 @@ urlpatterns = [
     path('search/', views.search_messages, name='search'),
     path('post_message/', views.send_message, name='send_message'),
     path('membership_requests/', views.membership_requests, name='membership_requests'),
-    path('approve_membership/<int:application_id>/', views.approve_membership, name='approve_membership'),
-    path('reject_membership/<int:application_id>/', views.reject_membership, name='reject_membership'),
+    path('insert_vote/<int:application_id>/', views.insert_vote, name='insert_vote'),
     path('users/', views.users, name='users'),
     path('search_users/', views.search_users, name='search_users'),
-    path('add_neighbor/', views.add_neighbor, name='add_neighbor'),
-
-
+    path('add_friend/<int:friend_id>/', add_friend, name='add_friend'),
+    path('add_neighbor/<int:neighbor_id>/', add_neighbor, name='add_neighbor'),
+    path('membership/',views.view_member_status, name='view_member_status'),
+    path('list_friends/', views.list_friends, name='list_friends'),
+    path('list_neighbors/', views.list_neighbors, name='list_neighbors'),
 ]
 
 
