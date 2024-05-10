@@ -23,6 +23,9 @@ from django.shortcuts import render
 from django.http import HttpResponse
 from .models import Users, Friendship
 from django.db import connection
+from django.http import JsonResponse, HttpResponse
+from django.db import connection
+from django.views.decorators.http import require_POST
     
 def home(request):
     if request.session.get('is_logged_in', False):
@@ -31,7 +34,22 @@ def home(request):
         user_details = Users.objects.get(user_id=user_id)
         # Fetch the 3 latest users who have joined
         latest_users = Users.objects.order_by('-created_at')[:3]
-        return render(request, 'home.html', {'user': user_details, 'latest_users': latest_users})
+
+        with connection.cursor() as cursor:
+            # Use the user_id directly from the session for the SQL query
+            cursor.execute("""
+                SELECT u.*
+                FROM users u
+                JOIN friendship f ON u.user_id = f.friend_id
+                WHERE f.user_id = %s
+            """, [user_id])
+            rows = cursor.fetchall()
+            columns = [col[0] for col in cursor.description]
+            friends = [
+                dict(zip(columns, row))
+                for row in rows
+            ]
+        return render(request, 'home.html', {'user': user_details, 'latest_users': latest_users, 'friends': friends})
     else:
         return redirect('login') 
 
@@ -259,24 +277,14 @@ def view_applications(request):
     return render(request, 'view_applications.html', {'applications': applications})
 
 
-
-from django.http import JsonResponse, HttpResponse
-from django.db import connection
-from django.views.decorators.http import require_POST
-
-# @require_POST  # Ensures that this view can only handle POST requests.
+@require_POST  # Ensures that this view can only handle POST requests.
 def send_message(request):
-    print("HI")
-    print(request.POST)
     if 'is_logged_in' in request.session and request.session['is_logged_in']:
         user_id = request.session['user_id']
         thread_title = request.POST.get('thread_title')
-        recipient = request.POST.get('recipient')
-        friend_id = request.POST.get('friend_id')
-        block_id = request.POST.get('block_id')
-        hood_id = request.POST.get('hood_id')
-        text_body = request.POST.get('text_body')
-        addr_id = request.POST.get('addr_id')  # Make sure to capture all needed fields.
+        recipient = request.POST.get('recipient', 'friend')  # Default to 'friend' if not specified
+        friend_id = request.POST.get('friend_id', None)  # Default to None if not specified
+        text_body = request.POST.get('text_body', '')
 
         query1 = '''
         INSERT INTO Thread (thread_title)
@@ -284,22 +292,22 @@ def send_message(request):
         RETURNING thread_id;'''
         
         query2 = '''
-        INSERT INTO Message (user_id, thread_id, recipient, friend_id, block_id, hood_id, text_body, addr_id)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
+        INSERT INTO Message (user_id, thread_id, recipient, friend_id, text_body)
+        VALUES (%s, %s, %s, %s, %s);
         '''
 
         try:
-            with connection.cursor() as cursor:
-                cursor.execute(query1, [thread_title])
-                thread_id = cursor.fetchone()[0]  # Fetch the newly created thread_id
-                
-                cursor.execute(query2, (user_id, thread_id, recipient, friend_id, block_id, hood_id, text_body, addr_id))
-                print(query2, (user_id, thread_id, recipient, friend_id, block_id, hood_id, text_body, addr_id))
-                connection.commit()  # Ensure the transaction is committed
+            with transaction.atomic():
+                with connection.cursor() as cursor:
+                    cursor.execute(query1, [thread_title])
+                    thread_id = cursor.fetchone()[0]  # Fetch the newly created thread_id
+                    
+                    cursor.execute(query2, (user_id, thread_id, recipient, friend_id, text_body))
+                    print("Executed SQL:", query2, (user_id, thread_id, recipient, friend_id, text_body))
 
-            return JsonResponse({'status': 'success'}, status=201)
+            return render(request, 'success.html')
         except Exception as e:
-            return JsonResponse({'error': str(e)}, status=400)
+            return render(request, 'error.html')
     else:
         return HttpResponse("Unauthorized", status=401)
 
@@ -548,7 +556,7 @@ def list_friends(request):
             friends_raw = cursor.fetchall()  # Fetch all records
 
         # Assuming that the indices 3 and 4 in friends_raw correspond to first_name and last_name
-        friends_list = [f"Friend: {friend[3]} {friend[4]}" for friend in friends_raw]
+        friends_list = [f"{friend[1]} : {friend[2]} {friend[3]}" for friend in friends_raw]
 
         return render(request, 'friends_list.html', {'friends': friends_list})
     else:
@@ -569,7 +577,7 @@ def list_neighbors(request):
             neighbors_raw = cursor.fetchall()  # Fetch all records
 
         # Assuming that the indices 3 and 4 in friends_raw correspond to first_name and last_name
-        neighbors_list = [f"neighbors: {neighbor[3]} {neighbor[4]}" for neighbor in neighbors_raw]
+        neighbors_list = [f"{neighbor[1]} : {neighbor[2]} {neighbor[3]}" for neighbor in neighbors_raw]
 
         return render(request, 'neighbors_list.html', {'neighbors': neighbors_list})
     else:
@@ -628,13 +636,3 @@ def get_threads_by_friend(request, friend_id):
             return render(request, 'friends_thread.html', {'threads': threads})
         except Exception as e:
             print("Error fetching threads by friend_id:", str(e))
-
-    
-
-def friends_dropdown(request, user_id):
-    # Assuming you have a Users model and it's correctly linked
-    user = Users.objects.get(id=user_id)
-    friendships = Friendship.objects.filter(user_id=user).select_related('friend_id')
-    friends = [f.friend_id for f in friendships if f.friend_id is not None]
-    print(friends)
-    return render(request, 'home.html', {'friends': friends, 'user': user})

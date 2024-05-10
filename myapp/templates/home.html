@@ -107,18 +107,20 @@
                             {% csrf_token %}
                             <div class="form-group">
                                 <label for="message-subject">Thread Title</label>
-                                <input type="text" class="form-control" id="message-subject" name="title" required>
+                                <input type="text" class="form-control" id="message-subject" name="thread_title" required>
                             </div>
                             <div class="form-group">
                                 <label for="message-recipients">Recipients</label>
                                 <ul class="recipient-options">
                                     <li>
-                                        <input type="checkbox" id="recipient-friend" name="recipient" value="friend">
-                                        <label for="recipient-friend">A Friend</label>
-                                    </li>
-                                    <li>
-                                        <input type="checkbox" id="recipient-friend" name="recipient" value="friend">
-                                        <label for="recipient-friend">All Friends</label>
+                                        <input type="checkbox" id="recipient-specific-friend" name="recipient" value="friend">
+                                        <label for="recipient-specific-friend">A Friend</label>
+                                        <!-- Dropdown for selecting a specific friend -->
+                                        <select name="friend_id" id="friend_id" class="ml-2">
+                                            {% for friend in friends %}
+                                            <option value="{{ friend.user_id }}">{{ friend.user_name}}</option>
+                                            {% endfor %}
+                                        </select>
                                     </li>
                                     <li>
                                         <input type="checkbox" id="recipient-neighbor" name="recipient" value="neighbor">

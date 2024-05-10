@@ -1,7 +1,15 @@
-<!-- error.html -->
-{% extends 'base.html' %}
-
-{% block content %}
-<h2>Error</h2>
-<p>{{ message }}</p>
-{% endblock %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Success Page</title>
+</head>
+<body>
+    <div style="text-align: center;">
+        <h2>Error!</h2>
+        <p>There is an error.</p>
+        <a href="{% url 'home' %}"><button>Back to Home</button></a>
+    </div>
+</body>
+</html>
