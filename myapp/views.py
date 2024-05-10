@@ -279,9 +279,31 @@ def reject_membership(request, application_id):
     
 from .models import Users
 
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect
+from django.http import HttpResponse, JsonResponse
+from .models import Users, Neighbors
+
+@login_required
 def users(request):
-    users = Users.objects.all()
-    return render(request, 'users.html', {'users': users})
+    current_user_id = request.user.id
+    users = Users.objects.exclude(user_id=current_user_id)
+
+    if request.method == 'POST':
+        user_id = request.POST.get('user_id')
+
+        # Check if the user is already a neighbor
+        is_neighbor = Neighbors.objects.filter(user_id=current_user_id, neighbor_id=user_id).exists()
+
+        if not is_neighbor:
+            # Add the user as a neighbor
+            Neighbors.objects.create(user_id=current_user_id, neighbor_id=user_id)
+        
+        # Redirect to the users page after updating
+        return redirect('users')
+
+    return render(request, 'users.html', {'users': users, 'current_user_id': current_user_id})
+
 
 def find_user(username):
     with connection.cursor() as cursor:
@@ -322,3 +344,21 @@ def add_neighbor(request):
     # Handle GET requests if needed
     return HttpResponseNotAllowed(['POST'])
 
+from .models import Friendship
+
+
+def add_friend(request):
+    if request.method == 'POST':
+        friend_id = request.POST.get('friend_id')
+
+        # Check if the user is already a friend
+        is_friend = Friendship.objects.filter(user_id=request.user.id, friend_id=friend_id).exists()
+
+        if not is_friend:
+            # Add the user as a friend
+            Friendship.objects.create(user_id=request.user.id, friend_id=friend_id)
+
+        return redirect('users')
+
+    # Handle GET requests if needed
+    return HttpResponseNotAllowed(['POST'])

@@ -18,6 +18,7 @@ urlpatterns = [
     path('users/', views.users, name='users'),
     path('search_users/', views.search_users, name='search_users'),
     path('add_neighbor/', views.add_neighbor, name='add_neighbor'),
+    path('add_friend/', views.add_friend, name='add_friend'),
 
 
 ]
