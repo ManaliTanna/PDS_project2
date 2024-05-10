@@ -171,8 +171,9 @@
                         Filters
                     </div>
                     <ul class="list-group list-group-flush">
-                        <li class="list-group-item"><a href="{% url 'get_threads_by_block' block_id=2 %}">Block Feeds</a></li>
+                        <li class="list-group-item"><a href="{% url 'get_threads_by_block' block_id=1 %}">Block Feeds</a></li>
                         <li class="list-group-item"><a href="{% url 'get_threads_by_hood' hood_id=2 %}">Hood Feeds</a></li>
+                        <li class="list-group-item"><a href="{% url 'get_threads_by_friend' user.user_id %}">Neighbor Feeds</a></li>
                         <li class="list-group-item"><a href="{% url 'get_threads_by_friend' user.user_id %}">Friend Feeds</a></li>
                     </ul>
                 </div>

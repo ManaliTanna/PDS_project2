@@ -73,13 +73,23 @@ def home(request):
             """, [user_id])
             hoods = [dict(zip([col[0] for col in cursor.description], row)) for row in cursor.fetchall()]
 
+        # Fetch membership info (this is highly speculative, adjust as necessary)
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT m.*
+                FROM membership m
+                JOIN users u ON m.user_id = u.user_id and m.user_id = %s
+            """, [user_id])
+            membership = [dict(zip([col[0] for col in cursor.description], row)) for row in cursor.fetchall()]
+
         return render(request, 'home.html', {
             'user': user_details, 
             'latest_users': latest_users, 
             'friends': friends, 
             'neighbors': neighbors,
             'blocks': blocks,
-            'hoods': hoods
+            'hoods': hoods,
+            'membership': membership
         })
     else:
         return redirect('login') 
@@ -152,41 +162,42 @@ def signup(request):
     
 
 def profile(request):
-    # Check if the user is logged in
-    if 'is_logged_in' in request.session and request.session['is_logged_in']:
-        user_id = request.session['user_id']
-        try:
-            user = Users.objects.get(user_id=user_id)
-            if request.method == 'POST':
-                # Retrieve updated profile information from the form
-                first_name = request.POST.get('first_name')
-                last_name = request.POST.get('last_name')
-                email = request.POST.get('email')
-                phone_number = request.POST.get('phone_number')
-                number_of_family_members = request.POST.get('number_of_family_members')
-                intro = request.POST.get('intro')
-                # Retrieve other updated profile attributes similarly
-                
-                # Update the user's profile in the database using SQL queries
-                with connection.cursor() as cursor:
-                    cursor.execute(
-                        "UPDATE users SET first_name = %s, last_name = %s, email = %s, phone_number = %s, number_of_family_members = %s, intro = %s WHERE user_id = %s",
-                        [first_name, last_name, email, phone_number, number_of_family_members, intro, user_id]
-                    )
-                    # Execute similar UPDATE queries for other profile attributes
-                
-                # Redirect to the profile page after updating
-                return redirect('profile')
-
-            context = {
-                'user': user,
-                'address': user.addr_id  # Directly access the address from the user
-            }
-            return render(request, 'profile.html', context)
-        except Users.DoesNotExist:
-            return HttpResponse('User does not exist.', status=404)
-    else:
+    if 'is_logged_in' not in request.session:
         return redirect('login')
+
+    user_id = request.session.get('user_id')
+    try:
+        user = Users.objects.select_related('addr_id').get(user_id=user_id)
+    except Users.DoesNotExist:
+        return HttpResponse('User does not exist.', status=404)
+
+    if request.method == 'POST':
+        # Assuming you have the fields in the POST data
+        user.first_name = request.POST.get('first_name')
+        user.last_name = request.POST.get('last_name')
+        user.email = request.POST.get('email')
+        user.phone_number = request.POST.get('phone_number')
+        user.number_of_family_members = request.POST.get('number_of_family_members')
+        user.intro = request.POST.get('intro')
+        user.addr_id.apt_number = request.POST.get('apt_number')
+        user.addr_id.street_number = request.POST.get('street_number')
+        user.addr_id.city = request.POST.get('city')
+        user.addr_id.state = request.POST.get('state')
+        user.addr_id.country = request.POST.get('country')
+        user.addr_id.zipcode = request.POST.get('zip_code')
+        user.addr_id.latitude = request.POST.get('latitude')
+        user.addr_id.longitude = request.POST.get('longitude')
+
+        user.addr_id.save()  # Save address changes
+        user.save()  # Save user changes
+
+        return redirect('profile')  # Redirect back to the profile page to show updated info
+
+    context = {
+        'user': user
+    }
+    return render(request, 'profile.html', context)
+
     
 def blocks(request):
     blocks = Blocks.objects.all()
@@ -668,9 +679,9 @@ def get_threads_by_friend(request, friend_id):
             print("Error fetching threads by friend_id:", str(e))
 
 
-#Use the %s placeholder for the search term, and pass the term as a parameter in a tuple/list 
-#to the execute() method. This avoids SQL injection risks and ensures that special characters 
-#in the search term are correctly handled by the database driver.
+#Use the %s placeholder for the search term, and pass the term as a parameter 
+#to the execute() method. 
+#This avoids SQL injection risks 
 def search_messages(request):
     messages = []  # This will hold the search results
     if 'is_logged_in' in request.session and request.session['is_logged_in']:
@@ -689,4 +700,3 @@ def search_messages(request):
                 messages = [dict(zip(columns, row)) for row in rows]
 
     return render(request, 'messages.html', {'messages': messages})
-

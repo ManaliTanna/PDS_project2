@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>User Profile</title>
     <!-- Bootstrap CSS -->
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
@@ -14,136 +13,89 @@
 </head>
 <body>
     <div class="container mt-4">
-         <!-- Button to go to home page -->
+        <!-- Button to go to home page -->
         <a href="{% url 'home' %}" class="btn btn-secondary top-right">Go to Home Page</a>
-        <h1>User Profile</h1>
+        <h1>Edit Profile</h1>
         <div class="row">
-            <div class="col-md-6">
-                <!-- Profile information -->
-                <div class="card mb-3">
+            <div class="col-md-12">
+                <!-- Profile editing form -->
+                <div class="card">
                     <div class="card-header">
                         Profile Information
                     </div>
                     <div class="card-body">
-                        <!-- Display user information -->
-                        <p><strong>Username:</strong> <span id="username">{{user.user_name}}</span></p>
-                        <p><strong>First Name:</strong> <span id="first-name">{{user.first_name}}</span></p>
-                        <p><strong>Last Name:</strong> <span id="last-name">{{user.last_name}}</span></p>
-                        <p><strong>Email:</strong> <span id="email">{{user.email}}</span></p>
-                        <p><strong>Phone Number:</strong> <span id="phone-number">{{user.phone_number}}</span></p>
-                        <p><strong>Number of Family Members:</strong> <span id="family-members">{{user.number_of_family_members}}</span></p>
-                        <p><strong>Intro:</strong> <span id="intro">{{user.intro}}</span></p>
-                        <p><strong>Apt Number:</strong> <span id="apt-number">{{address.apt_number}}</span></p>
-                        <p><strong>Street number:</strong> <span id="street-number">{{address.street_number}}</span></p>
-                        <p><strong>City:</strong> <span id="city">{{address.city}}</span></p>
-                        <p><strong>State:</strong> <span id="state">{{address.state}}</span></p>
-                        <p><strong>Country:</strong> <span id="country">{{address.country}}</span></p>
-                        <p><strong>zip code:</strong> <span id="zip_code">{{address.zipcode}}</span></p>
-                        <p><strong>latitude:</strong> <span id="latitude">{{address.latitude}}</span></p>
-                        <p><strong>longitude:</strong> <span id="longitude">{{address.longitude}}</span></p>
-                        <!-- User photo -->
-                        <img src="user-photo.jpg" alt="User Photo" id="user-photo" class="img-fluid">
+                        <form id="profile-form" method="POST">
+                            {% csrf_token %}
+                            <!-- Editable user information fields -->
+                            <div class="form-group">
+                                <label for="edit-first-name">First Name</label>
+                                <input type="text" class="form-control" id="edit-first-name" name="first_name" value="{{ user.first_name }}">
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-last-name">Last Name</label>
+                                <input type="text" class="form-control" id="edit-last-name" name="last_name" value="{{ user.last_name }}">
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-email">Email</label>
+                                <input type="email" class="form-control" id="edit-email" name="email" value="{{ user.email }}">
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-phone-number">Phone Number</label>
+                                <input type="tel" class="form-control" id="edit-phone-number" name="phone_number" value="{{ user.phone_number }}">
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-family-members">Number of Family Members</label>
+                                <input type="number" class="form-control" id="edit-family-members" name="number_of_family_members" value="{{ user.number_of_family_members }}">
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-intro">Introduction</label>
+                                <textarea class="form-control" id="edit-intro" name="intro">{{ user.intro }}</textarea>
+                            </div>
+                            <!-- Address details -->
+                            <div class="form-group">
+                                <label for="edit-apt-number">Apartment Number</label>
+                                <input type="text" class="form-control" id="edit-apt-number" name="apt_number" value="{{ user.addr_id.apt_number }}">
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-street-number">Street Number</label>
+                                <input type="text" class="form-control" id="edit-street-number" name="street_number" value="{{ user.addr_id.street_name }}">
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-city">City</label>
+                                <input type="text" class="form-control" id="edit-city" name="city" value="{{ user.addr_id.city }}">
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-state">State</label>
+                                <input type="text" class="form-control" id="edit-state" name="state" value="{{ user.addr_id.state }}">
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-country">Country</label>
+                                <input type="text" class="form-control" id="edit-country" name="country" value="{{ user.addr_id.country }}">
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-zip-code">Zip Code</label>
+                                <input type="text" class="form-control" id="edit-zip-code" name="zip_code" value="{{ user.addr_id.zip_code }}">
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-latitude">Latitude</label>
+                                <input type="text" class="form-control" id="edit-latitude" name="latitude" value="{{ user.addr_id.latitude }}">
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-longitude">Longitude</label>
+                                <input type="text" class="form-control" id="edit-longitude" name="longitude" value="{{ user.addr_id.longitude }}">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </form>
                     </div>
                 </div>
             </div>
-            <div class="col-md-6">
-                <!-- Profile editing form -->
-            <div class="card">
-                <div class="card-header">
-                    Edit Profile
-                </div>
-                <div class="card-body">
-                    <form id="profile-form" method="POST">
-                        {% csrf_token %}
-                        <!-- Editable user information fields -->
-                        <div class="form-group">
-                            <label for="edit-first-name">First Name</label>
-                            <input type="text" class="form-control" id="edit-first-name" name="first_name" value="{{ user.first_name }}">
-                        </div>
-                        <div class="form-group">
-                            <label for="edit-last-name">Last Name</label>
-                            <input type="text" class="form-control" id="edit-last-name" name="last_name" value="{{ user.last_name }}">
-                        </div>
-                        <div class="form-group">
-                            <label for="edit-email">Email</label>
-                            <input type="email" class="form-control" id="edit-email" name="email" value="{{ user.email }}">
-                        </div>
-                        <div class="form-group">
-                            <label for="edit-phone-number">Phone Number</label>
-                            <input type="tel" class="form-control" id="edit-phone-number" name="phone_number" value="{{ user.phone_number }}">
-                        </div>
-                        <div class="form-group">
-                            <label for="edit-family-members">Number of Family Members</label>
-                            <input type="number" class="form-control" id="edit-family-members" name="number_of_family_members" value="{{ user.number_of_family_members }}">
-                        </div>
-                        <div class="form-group">
-                            <label for="edit-intro">Introduction</label>
-                            <textarea class="form-control" id="edit-intro" name="intro">{{ user.intro }}</textarea>
-                        </div>
-                        <!-- Add more input fields for other profile attributes -->
-                        <button type="submit" class="btn btn-primary">Save Changes</button>
-                    </form>
-                </div>
-            </div>
-
-            </div>
         </div>
     </div>
-    
+
     <a href="{% url 'home' %}" class="btn btn-secondary mt-3">Go to Home Page</a>
     <!-- Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    <!-- Custom JavaScript -->
-    <script>
-        // Function to populate profile information
-        // function populateProfileInfo() {
-        //     // Retrieve user information from backend (replace with actual data retrieval logic)
-        //     const userData = {
-        //         username: userData.username",
-        //         firstName: "John",
-        //         lastName: "Doe",
-        //         email: "johndoe@example.com",
-        //         phoneNumber: "1234567890",
-        //         familyMembers: 4,
-        //         address: "123 Main St, City, Country",
-        //         // photo: "user-photo.jpg" // You can optionally retrieve the user photo URL from the backend
-        //     };
-
-            // Populate profile information fields
-            $('#username').text(userData.username);
-            $('#first-name').text(userData.firstName);
-            $('#last-name').text(userData.lastName);
-            $('#email').text(userData.email);
-            $('#phone-number').text(userData.phoneNumber);
-            $('#family-members').text(userData.familyMembers);
-            $('#address').text(userData.address);
-            // $('#user-photo').attr('src', userData.photo); // Uncomment this line if using user photo
-        //}
-
-        // Function to handle profile editing form submission
-        $('#profile-form').submit(function(event) {
-            event.preventDefault();
-            // Retrieve edited profile information from form
-            const editedProfile = {
-                firstName: $('#edit-first-name').val(),
-                lastName: $('#edit-last-name').val(),
-                email: $('#edit-email').val(),
-                phoneNumber: $('#edit-phone-number').val(),
-                familyMembers: $('#edit-family-members').val(),
-                address: $('#edit-address').val(),
-                // photo: $('#edit-photo').val() // You can optionally handle photo upload here
-                // Add more fields as needed
-            };
-            // Handle updating profile information in the backend (not implemented in this example)
-            console.log("Updated profile:", editedProfile);
-        });
-
-        // Call populateProfileInfo function when the page loads
-        $(document).ready(function() {
-            populateProfileInfo();
-        });
-    </script>
 </body>
 </html>
