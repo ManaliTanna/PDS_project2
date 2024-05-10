@@ -574,8 +574,67 @@ def list_neighbors(request):
         return render(request, 'neighbors_list.html', {'neighbors': neighbors_list})
     else:
         return HttpResponse("Please login to see the friends list.")
+    
 
+def get_threads_by_block(request, block_id):
+    if 'is_logged_in' in request.session and request.session['is_logged_in']:
+        user_id = request.session['user_id']
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    SELECT t.thread_id, t.thread_title
+                    FROM message m
+                    JOIN thread t ON m.thread_id = t.thread_id
+                    WHERE m.block_id = %s
+                """, [block_id])
+                rows = cursor.fetchall()
+            threads = [{'thread_id': row[0], 'thread_title': row[1]} for row in rows]
+            print(threads)
+            return render(request, 'block_thread.html', {'threads': threads})
+        except Exception as e:
+            print("Error fetching threads by block_id:", str(e))
+
+
+def get_threads_by_hood(request, hood_id):
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT t.thread_id, t.thread_title
+                FROM message m
+                JOIN thread t ON m.thread_id = t.thread_id
+                WHERE m.hood_id = %s
+            """, [hood_id])
+            rows = cursor.fetchall()
+        threads = [{'thread_id': row[0], 'thread_title': row[1]} for row in rows]
+        print(threads)
+        return render(request, 'hood_thread.html', {'threads': threads})
+    except Exception as e:
+        print("Error fetching threads by hood_id:", str(e))
+
+def get_threads_by_friend(request, friend_id):
+    if 'is_logged_in' in request.session and request.session['is_logged_in']:
+        user_id = request.session['user_id']
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    SELECT t.thread_id, t.thread_title, m.text_body
+                    FROM message m
+                    JOIN thread t ON m.thread_id = t.thread_id
+                    WHERE m.friend_id = %s
+                """, [friend_id])
+                rows = cursor.fetchall()
+            threads = [{'thread_id': row[0], 'thread_title': row[1], 'message': row[2]} for row in rows]
+            print(threads)
+            return render(request, 'friends_thread.html', {'threads': threads})
+        except Exception as e:
+            print("Error fetching threads by friend_id:", str(e))
 
     
 
-
+def friends_dropdown(request, user_id):
+    # Assuming you have a Users model and it's correctly linked
+    user = Users.objects.get(id=user_id)
+    friendships = Friendship.objects.filter(user_id=user).select_related('friend_id')
+    friends = [f.friend_id for f in friendships if f.friend_id is not None]
+    print(friends)
+    return render(request, 'home.html', {'friends': friends, 'user': user})

@@ -98,30 +98,24 @@
         </div>
         <div class="row mt-4">
             <div class="col-md-8">
-                <!-- Thread list -->
                 <div class="card mb-3">
                     <div class="card-header">
-                        All Recent Threads
-                    </div>
-                    <ul class="list-group list-group-flush" id="thread-list">
-                        <!-- Threads will be dynamically added here -->
-                    </ul>
-                </div>
-                <!-- Post message form -->
-                <div class="card mb-3">
-                    <div class="card-header">
-                        Start a New Topic
+                        Start a New Thread
                     </div>
                     <div class="card-body">
                         <form id="post-form" method="post" action="{% url 'send_message' %}">
                             {% csrf_token %}
                             <div class="form-group">
-                                <label for="message-subject">Subject</label>
+                                <label for="message-subject">Thread Title</label>
                                 <input type="text" class="form-control" id="message-subject" name="title" required>
                             </div>
                             <div class="form-group">
                                 <label for="message-recipients">Recipients</label>
                                 <ul class="recipient-options">
+                                    <li>
+                                        <input type="checkbox" id="recipient-friend" name="recipient" value="friend">
+                                        <label for="recipient-friend">A Friend</label>
+                                    </li>
                                     <li>
                                         <input type="checkbox" id="recipient-friend" name="recipient" value="friend">
                                         <label for="recipient-friend">All Friends</label>
@@ -141,7 +135,7 @@
                                 </ul>
                             </div>
                             <div class="form-group">
-                                <label for="message-content">Message Content</label>
+                                <label for="message-content">Message Body</label>
                                 <textarea class="form-control" id="message-content" name="text_body" rows="6" required></textarea>
                             </div>
                             <button type="submit" class="btn btn-primary">Post</button>
@@ -157,10 +151,9 @@
                         Filters
                     </div>
                     <ul class="list-group list-group-flush">
-                        <li class="list-group-item">Neighbor Feeds</li>
-                        <li class="list-group-item">Friend Feeds</li>
-                        <li class="list-group-item">Block Feeds</li>
-                        <li class="list-group-item">Hood Feeds</li>
+                        <li class="list-group-item"><a href="{% url 'get_threads_by_block' block_id=2 %}">Block Feeds</a></li>
+                        <li class="list-group-item"><a href="{% url 'get_threads_by_hood' hood_id=2 %}">Hood Feeds</a></li>
+                        <li class="list-group-item"><a href="{% url 'get_threads_by_friend' user.user_id %}">Friend Feeds</a></li>
                     </ul>
                 </div>
                 <!-- Options -->
