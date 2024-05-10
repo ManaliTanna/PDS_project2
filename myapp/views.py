@@ -6,7 +6,7 @@ from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from django.db.utils import IntegrityError
 from django.db import DatabaseError, transaction 
-from .models import Users, Blocks, Address, Neighbors
+from .models import Users, Blocks, Address, Neighbors, Hoods
 from .forms.signup import UserSignupForm
 from .forms.address import AddressForm
 from django.db import connection
@@ -35,21 +35,52 @@ def home(request):
         # Fetch the 3 latest users who have joined
         latest_users = Users.objects.order_by('-created_at')[:3]
 
+        # Fetch Friends
         with connection.cursor() as cursor:
-            # Use the user_id directly from the session for the SQL query
             cursor.execute("""
                 SELECT u.*
                 FROM users u
                 JOIN friendship f ON u.user_id = f.friend_id
                 WHERE f.user_id = %s
             """, [user_id])
-            rows = cursor.fetchall()
-            columns = [col[0] for col in cursor.description]
-            friends = [
-                dict(zip(columns, row))
-                for row in rows
-            ]
-        return render(request, 'home.html', {'user': user_details, 'latest_users': latest_users, 'friends': friends})
+            friends = [dict(zip([col[0] for col in cursor.description], row)) for row in cursor.fetchall()]
+
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT u.*
+                FROM users u
+                JOIN neighbors n ON u.user_id = n.neighbor_id
+                WHERE u.user_id = %s
+            """, [user_id])
+            neighbors = [dict(zip([col[0] for col in cursor.description], row)) for row in cursor.fetchall()]
+
+        # Fetch Blocks (this is highly speculative, adjust as necessary)
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT b.*
+                FROM blocks b
+                JOIN membership m ON m.block_id = b.block_id and m.user_id = %s
+            """, [user_id])
+            blocks = [dict(zip([col[0] for col in cursor.description], row)) for row in cursor.fetchall()]
+
+        # Fetch Hoods (similar speculation)
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT h.*
+                FROM hoods h
+                JOIN blocks b ON h.hood_id = b.hood_id
+                JOIN membership m ON m.block_id = b.block_id and m.user_id = %s
+            """, [user_id])
+            hoods = [dict(zip([col[0] for col in cursor.description], row)) for row in cursor.fetchall()]
+
+        return render(request, 'home.html', {
+            'user': user_details, 
+            'latest_users': latest_users, 
+            'friends': friends, 
+            'neighbors': neighbors,
+            'blocks': blocks,
+            'hoods': hoods
+        })
     else:
         return redirect('login') 
 
@@ -444,7 +475,6 @@ def insert_vote(request,application_id):
 
                     # Check if vote count has reached 3, then update membership status to 'approved'
                     if vote_count == 3:
-                        print("VOTE 3 hogya")
                         cursor.execute("""
                             UPDATE membership
                             SET status = 'approved',permissions = 'read'
@@ -636,3 +666,27 @@ def get_threads_by_friend(request, friend_id):
             return render(request, 'friends_thread.html', {'threads': threads})
         except Exception as e:
             print("Error fetching threads by friend_id:", str(e))
+
+
+#Use the %s placeholder for the search term, and pass the term as a parameter in a tuple/list 
+#to the execute() method. This avoids SQL injection risks and ensures that special characters 
+#in the search term are correctly handled by the database driver.
+def search_messages(request):
+    messages = []  # This will hold the search results
+    if 'is_logged_in' in request.session and request.session['is_logged_in']:
+        if 'search_term' in request.GET:
+            search_term = request.GET['search_term']
+            with connection.cursor() as cursor:
+                # Correctly using parameter substitution in LIKE clause
+                cursor.execute('''
+                    SELECT m.message_id, m.title, m.text_body, m.timestamp, u.user_name
+                    FROM Message m JOIN Users u ON m.user_id = u.user_id
+                    WHERE m.text_body ILIKE %s
+                    ORDER BY m.timestamp DESC;
+                ''', [f"%{search_term}%"])  # Using a tuple for parameters
+                rows = cursor.fetchall()
+                columns = [col[0] for col in cursor.description]
+                messages = [dict(zip(columns, row)) for row in rows]
+
+    return render(request, 'messages.html', {'messages': messages})
+

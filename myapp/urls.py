@@ -27,6 +27,7 @@ urlpatterns = [
     path('threads/block/<int:block_id>/', views.get_threads_by_block, name='get_threads_by_block'),
     path('threads/hood/<int:hood_id>/', views.get_threads_by_hood, name='get_threads_by_hood'),
     path('threads/friend/<int:friend_id>/', views.get_threads_by_friend, name='get_threads_by_friend'),
+    path('search_messages/', views.search_messages, name='search_messages'),
 ]
 
 

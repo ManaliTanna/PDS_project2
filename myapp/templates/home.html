@@ -80,7 +80,7 @@
             </div>
             <div class="col-6">
                 <!-- Search Bar -->
-                <form class="form-inline d-flex justify-content-center" method="get" action="{% url 'search_users' %}">
+                <form class="form-inline d-flex justify-content-center" method="get" action="{% url 'search_messages' %}">
                     <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search" name="search_term">
                     <button class="btn btn-outline-primary my-2 my-sm-0" type="submit">Search</button>
                 </form>
@@ -113,29 +113,47 @@
                                 <label for="message-recipients">Recipients</label>
                                 <ul class="recipient-options">
                                     <li>
-                                        <input type="checkbox" id="recipient-specific-friend" name="recipient" value="friend">
-                                        <label for="recipient-specific-friend">A Friend</label>
+                                        <input type="checkbox" id="recipient-friend" name="recipient" value="friend">
+                                        <label for="recipient-friend">A Friend</label>
                                         <!-- Dropdown for selecting a specific friend -->
                                         <select name="friend_id" id="friend_id" class="ml-2">
                                             {% for friend in friends %}
-                                            <option value="{{ friend.user_id }}">{{ friend.user_name}}</option>
+                                            <option value="{{ friend.user_id }}">{{ friend.user_name }}</option>
                                             {% endfor %}
                                         </select>
                                     </li>
                                     <li>
                                         <input type="checkbox" id="recipient-neighbor" name="recipient" value="neighbor">
-                                        <label for="recipient-neighbor">All Neighbors</label>
+                                        <label for="recipient-neighbor">A Neighbor</label>
+                                        <!-- Dropdown for selecting a specific neighbor -->
+                                        <select name="neighbor_id" id="neighbor_id" class="ml-2">
+                                            {% for neighbor in neighbors %}
+                                            <option value="{{ neighbor.user_id }}">{{ neighbor.user_name }}</option>
+                                            {% endfor %}
+                                        </select>
                                     </li>
                                     <li>
                                         <input type="checkbox" id="recipient-block" name="recipient" value="block">
-                                        <label for="recipient-block">Entire Block</label>
+                                        <label for="recipient-block">A Block</label>
+                                        <!-- Dropdown for selecting a specific block -->
+                                        <select name="block_id" id="block_id" class="ml-2">
+                                            {% for block in blocks %}
+                                            <option value="{{ block.id }}">{{ block.block_name }}</option>
+                                            {% endfor %}
+                                        </select>
                                     </li>
                                     <li>
                                         <input type="checkbox" id="recipient-hood" name="recipient" value="hood">
-                                        <label for="recipient-hood">Entire Hood</label>
+                                        <label for="recipient-hood">A Hood</label>
+                                        <!-- Dropdown for selecting a specific hood -->
+                                        <select name="hood_id" id="hood_id" class="ml-2">
+                                            {% for hood in hoods %}
+                                            <option value="{{ hood.id }}">{{ hood.hood_name }}</option>
+                                            {% endfor %}
+                                        </select>
                                     </li>
                                 </ul>
-                            </div>
+                            </div>             
                             <div class="form-group">
                                 <label for="message-content">Message Body</label>
                                 <textarea class="form-control" id="message-content" name="text_body" rows="6" required></textarea>
